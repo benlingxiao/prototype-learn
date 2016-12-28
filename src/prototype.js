@@ -44,15 +44,24 @@ var Prototype = {
     return {
       //判断是否IE浏览器，支持attachEvent及detachEvent等IE事件处理程序的只有IE浏览器和Opera
       IE:             !!window.attachEvent && !isOpera,
+      //判断是否Opera浏览器
       Opera:          isOpera,
       WebKit:         ua.indexOf('AppleWebKit/') > -1,
       Gecko:          ua.indexOf('Gecko') > -1 && ua.indexOf('KHTML') === -1,
       MobileSafari:   /Apple.*Mobile/.test(ua)
     }
   })(),
+  //浏览器特性
   BrowserFeatures: {
+    //XPath是以路径的形式来指定HTML中的节点或元素
+    //这里是判断docuemnt.evaluate()方法可不可用
+    //-tips：!!可以将对应的类型强制转换为布尔值
     XPath: !!document.evaluate,
+    //判断document.querySelector()方法可不可用
+    //querySelector()使用css选择器查询HTML中改的元素，返回匹配的第一个元素
+    //querySelectorAll()返回匹配的所有元素集合
     SelectorsAPI: !!document.querySelector,
+    //元素扩展，返回布尔值
     ElementExtensions: (function() {
       var constructor = window.Element || window.HTMLElement;
       return !!(constructor && constructor.prototype);
