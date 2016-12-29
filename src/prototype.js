@@ -23,6 +23,9 @@
 
 /*
  * 声明prototype对象
+ * 包含了浏览器的版本信息，浏览器的特性等属性
+ * 使用布尔类型作为属性的值
+ * 预计是在使用某些方法的时候，直接通过判断布尔值来确定是否可用
  */
 var Prototype = {
   //版本号
@@ -52,6 +55,7 @@ var Prototype = {
     }
   })(),
   //浏览器特性
+  //
   BrowserFeatures: {
     //XPath是以路径的形式来指定HTML中的节点或元素
     //这里是判断docuemnt.evaluate()方法可不可用
@@ -63,9 +67,13 @@ var Prototype = {
     SelectorsAPI: !!document.querySelector,
     //元素扩展，返回布尔值
     ElementExtensions: (function() {
+      //判断元素或节点构造器是否可用
+      //HTMLElement 对象继承了 Node 和 Element 对象的标准方法
       var constructor = window.Element || window.HTMLElement;
       return !!(constructor && constructor.prototype);
     })(),
+
+    //一些特殊的元素扩展
     SpecificElementExtensions: (function() {
       // First, try the named class
       if (typeof window.HTMLDivElement !== 'undefined')
@@ -73,37 +81,69 @@ var Prototype = {
       var div = document.createElement('div'),
           form = document.createElement('form'),
           isSupported = false;
+      //__proto__（隐式原型）与prototype（显式原型）
+      //form元素的原型与div原型一致？
       if (div['__proto__'] && (div['__proto__'] !== form['__proto__'])) {
         isSupported = true;
       }
+      //还原div和form，避免对变量池造成混乱
       div = form = null;
       return isSupported;
     })()
   },
+  //脚本文档片段
+  //\\S表示匹配任意不是空白的字符，\\s表示匹配任意空白的字符，连在一起就是匹配所有字符
+  //为什么要定义为正则，原因不明。
   ScriptFragment: '<script[^>]*>([\\S\\s]*?)<\/script\\s*>',
+  //字面上看，是匹配JSON的正则表达式，
+  //原因不明
   JSONFilter: /^\/\*-secure-([\s\S]*)\*\/\s*$/,
+  //定义空方法，原因不明
   emptyFunction: function() { },
+  //直接返回参数的方法，原因不明
   K: function(x) { return x }
 };
+
+//如果当前浏览器是移动端Safari，就将特殊的元素扩展关闭，定为不可用
 if (Prototype.Browser.MobileSafari)
   Prototype.BrowserFeatures.SpecificElementExtensions = false;
+
 /* Based on Alex Arnell's inheritance implementation. */
+/*基于Alex Arnell's的继承成果*/
+//初始化对象
+//作用：
 var Class = (function() {
   
   // Some versions of JScript fail to enumerate over properties, names of which 
   // correspond to non-enumerable properties in the prototype chain
+  //某些版本的JS在枚举特性的时候会出错
+  //和原型链中的不可枚举的特性保持一致
+
+  //是否是特别的JS版本
   var IS_DONTENUM_BUGGY = (function(){
+
+    //for in的使用方法，p就是对象的key
+    //判断key的数据类型是否为String
     for (var p in { toString: 1 }) {
       // check actual property name, so that it works with augmented Object.prototype
+      //通过判断普通的特姓名，判断是否能工作在扩展的原型中（不会翻译，不懂）
+
+      //如果key是String类型，就代表不是特别的JS版本
       if (p === 'toString') return false;
     }
     return true;
   })();
-  
+  //不明所以，作用待补充
   function subclass() {};
+
+  //
   function create() {
+    //将方法的参数对象，复制一个副本赋值给properties，避免操作过程中修改了参数对象
     var parent = null, properties = $A(arguments);
+    //如果参数对象列表的第一个元素是function
     if (Object.isFunction(properties[0]))
+      //shift() 方法用于把数组的第一个元素从其中删除，并返回第一个元素的值。
+      //将参数对象的第一个元素删除并赋值给parent
       parent = properties.shift();
     function klass() {
       this.initialize.apply(this, arguments);
@@ -341,7 +381,12 @@ var Class = (function() {
   function isHash(object) {
     return object instanceof Hash;
   }
+  //判断是否为function方法
   function isFunction(object) {
+    //_toString.call(object)，相当于object.toString();
+    //call()方法是改变当前的作用域，即在object下执行_toString
+    //_toString = Object.prototype.toString
+    //FUNCTION_CLASS = '[object Function]'
     return _toString.call(object) === FUNCTION_CLASS;
   }
   function isString(object) {
@@ -357,6 +402,8 @@ var Class = (function() {
   function isUndefined(object) {
     return typeof object === "undefined";
   }
+
+  //把内部定义的方法，通过extend方法扩展给Object对象
   extend(Object, {
     extend:        extend,
     inspect:       inspect,
@@ -1009,10 +1056,17 @@ var Enumerable = (function() {
     find:       detect
   };
 })();
+
+//$A
+//传入的对象，如果可以转化为数组，就用toArray转化为数组
+//如果是数组，拷贝一个副本出来
 function $A(iterable) {
+  //如果参数为undefined，就返回一个array数组
   if (!iterable) return [];
   // Safari <2.0.4 crashes when accessing property of a node list with property accessor.
   // It nevertheless works fine with `in` operator, which is why we use it here
+  //Safari小于2.0.4的版本在查询节点列表的特性的时候会崩溃
+  //虽然在使用in的时候能正常运行
   if ('toArray' in Object(iterable)) return iterable.toArray();
   var length = iterable.length || 0, results = new Array(length);
   while (length--) results[length] = iterable[length];
