@@ -19,6 +19,7 @@
 /*
  * 代码解读，添加注释
  * by lingxiao
+ * 源码7329行
  */
 
 /*
@@ -145,6 +146,8 @@ var Class = (function() {
       //shift() 方法用于把数组的第一个元素从其中删除，并返回第一个元素的值。
       //将参数对象的第一个元素删除并赋值给parent
       parent = properties.shift();
+
+    //
     function klass() {
       this.initialize.apply(this, arguments);
     }
@@ -211,9 +214,19 @@ var Class = (function() {
     }
   };
 })();
+
+//用一个自执行方法，利用闭包把内部的一些方法开放出来
+//使用extend方法，把内部方法扩展给Object对象
+//JS对象可以直接使用这些扩展功能
 (function() {
+  //定义私有变量，_toString是Object原型的toString方法
   var _toString = Object.prototype.toString,
+  //所有继承了 Object.prototype 的对象都会从原型链上继承到 hasOwnProperty 方法，
+  //这个方法可以用来检测一个对象是否含有特定的自身属性，
+  //和 in 运算符不同，该方法会忽略掉那些从原型链上继承到的属性。
       _hasOwnProperty = Object.prototype.hasOwnProperty,
+
+      //定义一些静态变量
       NULL_TYPE = 'Null',
       UNDEFINED_TYPE = 'Undefined',
       BOOLEAN_TYPE = 'Boolean',
@@ -226,55 +239,91 @@ var Class = (function() {
       STRING_CLASS = '[object String]',
       ARRAY_CLASS = '[object Array]',
       DATE_CLASS = '[object Date]',
+      //是否支持JSON.stringify方法
       NATIVE_JSON_STRINGIFY_SUPPORT = window.JSON &&
         typeof JSON.stringify === 'function' &&
         JSON.stringify(0) === '0' &&
         typeof JSON.stringify(Prototype.K) === 'undefined';
         
   
-  
+  //干嘛用的数组？
   var DONT_ENUMS = ['toString', 'toLocaleString', 'valueOf',
    'hasOwnProperty', 'isPrototypeOf', 'propertyIsEnumerable', 'constructor'];
   
   // Some versions of JScript fail to enumerate over properties, names of which 
   // correspond to non-enumerable properties in the prototype chain
+  //某些版本的JS在枚举特性的时候会出错
+  //和原型链中的不可枚举的特性保持一致
+
+  //是否是特别的JS版本
   var IS_DONTENUM_BUGGY = (function(){
     for (var p in { toString: 1 }) {
       // check actual property name, so that it works with augmented Object.prototype
+      //通过判断普通的特姓名，判断是否能工作在扩展的原型中（不会翻译，不懂）
+
+      //如果key是String类型，就代表不是特别的JS版本
       if (p === 'toString') return false;
     }
     return true;
   })();
-        
+
+  //验证参数的类型
+  //param: o 对象
+  //return: (stirng)类型的名称 
   function Type(o) {
     switch(o) {
+      //如果参数为null，返回“Null”
       case null: return NULL_TYPE;
+      //void 0 === undefiend
+      //void 会执行后面的表达式并返回 undefined，可以用于执行一些只需要 side effect 而不需要返回值的表达式。
       case (void 0): return UNDEFINED_TYPE;
     }
+    //使用typeof判断参数的类型
+    //将null和undefined单独判断，因为typeof(null)返回的是object
     var type = typeof o;
+    //基本包装类型判断
     switch(type) {
+      //布尔类型
       case 'boolean': return BOOLEAN_TYPE;
+      //数值类型
       case 'number':  return NUMBER_TYPE;
+      //string类型
       case 'string':  return STRING_TYPE;
+      //其他仍有一些返回值，如function，但都是object，可以归为一类
     }
     return OBJECT_TYPE;
   }
   
+  //重要
+  //扩展方法
+  //params: 
+  //    destination: 目标对象
+  //    source: 要添加的对象
+  //return：返回扩展后的目标对象
+  //
   function extend(destination, source) {
+    //枚举source的属性，依次添加给destination
     for (var property in source)
       destination[property] = source[property];
+    //返回扩展后的目标对象
     return destination;
   }
+  //inspect:检查
+  //验证参数对象是什么东西
+  //return: 返回
   function inspect(object) {
+    //使用try catch防止执行出错影响执行
     try {
       if (isUndefined(object)) return 'undefined';
       if (object === null) return 'null';
+      //这一句不懂啥意思
       return object.inspect ? object.inspect() : String(object);
     } catch (e) {
       if (e instanceof RangeError) return '...';
       throw e;
     }
   }
+  //
   function toJSON(value) {
     return Str('', { '': value }, []);
   }
@@ -389,16 +438,20 @@ var Class = (function() {
     //FUNCTION_CLASS = '[object Function]'
     return _toString.call(object) === FUNCTION_CLASS;
   }
+  //判断是否为string
+  //原理同上
   function isString(object) {
     return _toString.call(object) === STRING_CLASS;
   }
+  //判断是否为number
   function isNumber(object) {
     return _toString.call(object) === NUMBER_CLASS;
   }
-  
+  //判断是否为date类型
   function isDate(object) {
     return _toString.call(object) === DATE_CLASS;
   }
+  //验证参数对象的类型是否为undefined
   function isUndefined(object) {
     return typeof object === "undefined";
   }
