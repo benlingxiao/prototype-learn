@@ -48,10 +48,13 @@ var Prototype = {
     return {
       //判断是否IE浏览器，支持attachEvent及detachEvent等IE事件处理程序的只有IE浏览器和Opera
       IE:             !!window.attachEvent && !isOpera,
-      //判断是否Opera浏览器
+      //判断是否opera浏览器
       Opera:          isOpera,
+      //userAgent以‘AppleWebKit/’开头，代表是WebKit浏览器
       WebKit:         ua.indexOf('AppleWebKit/') > -1,
+      //userAgent以‘Gecko/’或'KHTML'开头，代表是Gecko浏览器
       Gecko:          ua.indexOf('Gecko') > -1 && ua.indexOf('KHTML') === -1,
+      //使用正则表达式'/Apple.*Mobile/'验证userAgent，确定是否为mobileSafari，苹果手机浏览器
       MobileSafari:   /Apple.*Mobile/.test(ua)
     }
   })(),
