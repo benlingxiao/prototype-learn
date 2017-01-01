@@ -20,6 +20,8 @@
  * 代码解读，添加注释
  * by lingxiao
  * 源码7329行
+ * -tips-：代表知识点
+ * -adding-：待补充的知识点
  */
 
 /*
@@ -85,7 +87,7 @@ var Prototype = {
       var div = document.createElement('div'),
           form = document.createElement('form'),
           isSupported = false;
-      //__proto__（隐式原型）与prototype（显式原型）
+      //-adding-__proto__（隐式原型）与prototype（显式原型）
       //form元素的原型与div原型一致？
       if (div['__proto__'] && (div['__proto__'] !== form['__proto__'])) {
         isSupported = true;
@@ -96,7 +98,7 @@ var Prototype = {
     })()
   },
   //脚本文档片段
-  //\\S表示匹配任意不是空白的字符，\\s表示匹配任意空白的字符，连在一起就是匹配所有字符
+  //-tips-\\S表示匹配任意不是空白的字符，\\s表示匹配任意空白的字符，连在一起就是匹配所有字符
   //为什么要定义为正则，原因不明。
   ScriptFragment: '<script[^>]*>([\\S\\s]*?)<\/script\\s*>',
   //字面上看，是匹配JSON的正则表达式，
@@ -150,7 +152,7 @@ var Class = (function() {
       //将参数对象的第一个元素删除并赋值给parent
       parent = properties.shift();
 
-    //
+    //-adding-：this.initialize是类的构造函数，具体作用和用法，待补充（1）。
     function klass() {
       this.initialize.apply(this, arguments);
     }
@@ -313,35 +315,67 @@ var Class = (function() {
   }
   //inspect:检查
   //验证参数对象是什么东西
-  //return: 返回
+  //return: 将对象转化为字符串返回
+  //作用：更安全的将对象转化为字符串，避免错误数据影响程序运行
   function inspect(object) {
     //使用try catch防止执行出错影响执行
+    //-adding-:try catch
     try {
       if (isUndefined(object)) return 'undefined';
       if (object === null) return 'null';
       //这一句不懂啥意思
+      //如果参数object有inspect方法，就执行它，如果没有就用toString()转化为字符串
+      //作用：
       return object.inspect ? object.inspect() : String(object);
     } catch (e) {
+      //-tips-instanceof是用来测试它左边的对象是否是它右边的类的实例，返回boolean类型的数据。
       if (e instanceof RangeError) return '...';
+      //抛出异常
       throw e;
     }
   }
-  //
+  //将参数转化为json格式
   function toJSON(value) {
+    //调用Str方法
     return Str('', { '': value }, []);
   }
+  //重要
+  //params：
+  //  key:
+  //  holder:
+  //  stack:
+  //return: 
   function Str(key, holder, stack) {
+    //按照toJSON方法的调用路线研究
+    //key="",holder={"":value},stack=[]
+    
+    //初始化变量value=holder[key]=value
     var value = holder[key];
+    //判断value是否为一个对象，并且value是否有toJSON方法
     if (Type(value) === OBJECT_TYPE && typeof value.toJSON === 'function') {
+      //判断为真，
+      //value.toJSON("")，Str("",{"",""},[]);
+      //返回什么东西暂时不知道
       value = value.toJSON(key);
     }
+    //_class = value._toString();
     var _class = _toString.call(value);
+    //-tips-:switch case方法，像下面这样等同于
+    //if(_class===NUMBER_CLASS||_class===BOOLEAN_CLASS||_class===STRING_CLASS),都执行下面的语句
+
+    //如果value是数字，布尔值或字符串，返回值就是'null','true','false'其中一个
+    //除了上述三个，value还可以是方法，数组，日期
     switch (_class) {
       case NUMBER_CLASS:
       case BOOLEAN_CLASS:
       case STRING_CLASS:
+      //-adding-:valueOf() 方法可返回 Boolean 对象的原始值。
+      //-adding-：valueOf()和toString()的区别
+      //valueOf()返回的就是对象的原始值，最合适的原始值，和toString()差不多
+      //如果调用该方法的对象不是 Boolean，则抛出异常 TypeError。(这句话就是瞎扯，糊弄人)
         value = value.valueOf();
     }
+    //value的值，返回相应的值
     switch (value) {
       case null: return 'null';
       case true: return 'true';
@@ -350,37 +384,57 @@ var Class = (function() {
     var type = typeof value;
     switch (type) {
       case 'string':
+        //如果是string，返回String(value)
         return value.inspect(true);
       case 'number':
+        //-tips-isFinite() 函数用于检查其参数是否是无穷大。
+        //-tips-如果 number 是有限数字（或可转换为有限数字），那么返回 true。否则，如果 number 是 NaN（非数字），或者是正、负无穷大的数，则返回 false。
+        //如果value是有限数字，就转化为字符串返回，如果是无线数字，就返回null
         return isFinite(value) ? String(value) : 'null';
       case 'object':
+        //如果value是对象
+        //遍历stack，如果stack中含有和value相同的元素，返回提示
         for (var i = 0, length = stack.length; i < length; i++) {
           if (stack[i] === value) {
             throw new TypeError("Cyclic reference to '" + value + "' in object");
           }
         }
+        //如果stack中没有value，就将value插入stack中
         stack.push(value);
+        //初始化结果变量
         var partial = [];
+        //如果value是数组
         if (_class === ARRAY_CLASS) {
+          //将数组中的每个元素单独拿出来，格式化数据之后拼成一个数组返回
           for (var i = 0, length = value.length; i < length; i++) {
             var str = Str(i, value, stack);
             partial.push(typeof str === 'undefined' ? 'null' : str);
           }
+          //使用','作为分隔符
           partial = '[' + partial.join(',') + ']';
+
+        //如果value是js对象
         } else {
+          //拿出value所有的key
+          //分别放到结果变量中
+          //stack干嘛用暂时不知道
           var keys = Object.keys(value);
           for (var i = 0, length = keys.length; i < length; i++) {
             var key = keys[i], str = Str(key, value, stack);
             if (typeof str !== "undefined") {
+              //组成键值对
                partial.push(key.inspect(true)+ ':' + str);
              }
           }
           partial = '{' + partial.join(',') + '}';
         }
+        //取出value，还原stack
         stack.pop();
+        //返回结果对象
         return partial;
     }
   }
+  //封装JSON.stringify()方法，将json对象转化为字符串
   function stringify(object) {
     return JSON.stringify(object);
   }
@@ -463,6 +517,8 @@ var Class = (function() {
   extend(Object, {
     extend:        extend,
     inspect:       inspect,
+    //toJSON，可通过object.toJSON(key)调用
+    //若支持JSON.stringify,直接使用，不支持就使用toJSON方法
     toJSON:        NATIVE_JSON_STRINGIFY_SUPPORT ? stringify : toJSON,
     toQueryString: toQueryString,
     toHTML:        toHTML,
