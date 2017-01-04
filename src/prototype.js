@@ -22,6 +22,7 @@
  * 源码7329行
  * -tips-：代表知识点
  * -adding-：待补充的知识点
+ * -API-：http://api.prototypejs.org/中解释
  */
 
 /*
@@ -345,6 +346,8 @@ var Class = (function() {
   //  holder:
   //  stack:
   //return: 
+
+  //最后还是没有吃透，有时间再来看，先往下进行
   function Str(key, holder, stack) {
     //按照toJSON方法的调用路线研究
     //key="",holder={"":value},stack=[]
@@ -426,6 +429,7 @@ var Class = (function() {
                partial.push(key.inspect(true)+ ':' + str);
              }
           }
+          //拼成JSON格式的字符串
           partial = '{' + partial.join(',') + '}';
         }
         //取出value，还原stack
@@ -438,21 +442,38 @@ var Class = (function() {
   function stringify(object) {
     return JSON.stringify(object);
   }
+  //Hash是Prototype里新创建的类，需要通过new Hash()进行实例化 
+  //虽然，你可以将{}、Object理解成 hashMap，但在js他不叫Hash，而是Object
+  //-adding-:深入研究Hash对象的用法，原理以及为什么要用。
   function toQueryString(object) {
     return $H(object).toQueryString();
   }
+
+  //转化为HTML
+  //内部返回的是将参数转换为string的值或对象本身的方法返回。
   function toHTML(object) {
+  	//这种用法是先判断object是否定义了toHTML方法，如果有就执行，没有就转换为字符串返回
+  	//-API-使用Class.create()方法构造了一个对象，然后实例化了一个object出来，其中包含toHTML()方法，出现这种情况的时候，就优先执行object私有的toHTML
     return object && object.toHTML ? object.toHTML() : String.interpret(object);
   }
+  //返回对象的所有键值keys组成一个数组
+  //-tips-该方法返回的只是object的特有属性，并不返回从原型链中继承的属性
   function keys(object) {
+  	//先判断参数是不是JS对象，不是的话抛出错误
     if (Type(object) !== OBJECT_TYPE) { throw new TypeError(); }
+    //初始化结果数组
     var results = [];
+    //枚举object的每一个属性
     for (var property in object) {
+      //_hasOwnProperty方法会忽略掉那些从原型链上继承到的属性。
+      //所以这个方法并不枚举从原型链中继承的属性
       if (_hasOwnProperty.call(object, property))
+      	//push进结果数组中
         results.push(property);
     }
     
     // Account for the DontEnum properties in affected browsers.
+    //兼容性判断，防止有些浏览器是特殊的，枚举特性不一样
     if (IS_DONTENUM_BUGGY) {
       for (var i = 0; property = DONT_ENUMS[i]; i++) {
         if (_hasOwnProperty.call(object, property))
@@ -689,7 +710,12 @@ var PeriodicalExecuter = Class.create({
     }
   }
 });
+
+//扩展String对象的方法
 Object.extend(String, {
+//将对象转化为string类型
+//String()比toString()更安全一些，可以把null和undefined也转换为字符串
+//这里对参数进行判断，如果是null就返回空字符串
   interpret: function(value) {
     return value == null ? '' : String(value);
   },
@@ -1516,9 +1542,12 @@ Array.from = $A;
   if (!arrayProto.indexOf) arrayProto.indexOf = indexOf;
   if (!arrayProto.lastIndexOf) arrayProto.lastIndexOf = lastIndexOf;
 })();
+
+//初始化一个哈希对象
 function $H(object) {
   return new Hash(object);
 };
+//
 var Hash = Class.create(Enumerable, (function() {
   function initialize(object) {
     this._object = Object.isHash(object) ? object.toObject() : Object.clone(object);
