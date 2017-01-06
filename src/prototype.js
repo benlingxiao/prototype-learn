@@ -474,37 +474,49 @@ var Class = (function() {
     
     // Account for the DontEnum properties in affected browsers.
     //兼容性判断，防止有些浏览器是特殊的，枚举特性不一样
+    //-adding-:为什么要判断一些特定的属性是否为对象本身的属性？不懂
     if (IS_DONTENUM_BUGGY) {
       for (var i = 0; property = DONT_ENUMS[i]; i++) {
         if (_hasOwnProperty.call(object, property))
           results.push(property);
       }
     }
-    
+    //返回键值数组
     return results;
   }
+  //返回对象的所有属性值
+  //-adding-:为什么keys()方法需要判断枚举方法是否适用，而values()不用？
   function values(object) {
     var results = [];
     for (var property in object)
       results.push(object[property]);
     return results;
   }
+  //返回一个对象的副本（非引用）
   function clone(object) {
+  	//使用对象的extend方法
     return extend({ }, object);
   }
+  //判断当前对象是不是Element对象，即nodeType==1
+  //-tips-:每个节点都有一个nodeType属性，用于表明节点的类型。节点类型由在Node类型中定义的12个数值常量来表示，任何节点类型必属其一。
+  //常见的Node类型有：Node.ELEMENT_NODE(1),Node.TEXT_NODE(3),Node.DOCUMENT_NODE(9),Node.DOCUMENT_FRAGMENT_NODE(11)
   function isElement(object) {
+  	//!!用来强制转换为Boolean类型
     return !!(object && object.nodeType == 1);
   }
+  //判断对象是不是数组
+  //调用toString()方法，数组对象返回的是'[object Array]'
   function isArray(object) {
     return _toString.call(object) === ARRAY_CLASS;
   }
-  
+  //判断数组本身是否有isArray这个方法，如果有就将isArray改为数组本身的方法
   var hasNativeIsArray = (typeof Array.isArray == 'function') 
     && Array.isArray([]) && !Array.isArray({});
   
   if (hasNativeIsArray) {
     isArray = Array.isArray;
   }
+  //判断是否为Hash对象
   function isHash(object) {
     return object instanceof Hash;
   }
@@ -556,7 +568,10 @@ var Class = (function() {
     isUndefined:   isUndefined
   });
 })();
+
+//为Function对象的原型扩展方法
 Object.extend(Function.prototype, (function() {
+  //调用数组原型的slice方法
   var slice = Array.prototype.slice;
   function update(array, args) {
     var arrayLength = array.length, length = args.length;
