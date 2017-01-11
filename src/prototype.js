@@ -572,16 +572,29 @@ var Class = (function() {
 //为Function对象的原型扩展方法
 Object.extend(Function.prototype, (function() {
   //调用数组原型的slice方法
+  //-tips-slice() 方法可从已有的数组中返回选定的元素
+  //arrayObject.slice(start,end)
   var slice = Array.prototype.slice;
+  //又停更了好几天，这样不好
+
+  //更新数组
+  //将第二个数组合并到第一个数组中，并返回
   function update(array, args) {
+  	//保存两个数组的长度
     var arrayLength = array.length, length = args.length;
     while (length--) array[arrayLength + length] = args[length];
     return array;
   }
+  //合并两个数组（不知道和update有什么区别）
   function merge(array, args) {
+  	//-adding-将数组从第一个元素开始返回一个数组（那不就是数组本身吗？）
     array = slice.call(array, 0);
+    //然后又调用了update方法，合并两个数组
     return update(array, args);
   }
+  //Reads the argument names as stated in the function definition and returns the values as an array of strings
+  //返回方法的参数名，打包成一个数组返回
+  //-adding-怎么返回的，原理等等回来研究，现在头好痛，想不出
   function argumentNames() {
     var names = this.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
       .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
