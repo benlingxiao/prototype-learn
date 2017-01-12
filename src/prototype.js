@@ -596,6 +596,8 @@ Object.extend(Function.prototype, (function() {
   //返回方法的参数名，打包成一个数组返回
   //-adding-怎么返回的，原理等等回来研究，现在头好痛，想不出
   function argumentNames() {
+  	//-tips-match() 方法可在字符串内检索指定的值，或找到一个或多个正则表达式的匹配。
+	//-tips-该方法类似 indexOf() 和 lastIndexOf()，但是它返回指定的值，而不是字符串的位置。
     var names = this.toString().match(/^[\s\(]*function[^(]*\(([^)]*)\)/)[1]
       .replace(/\/\/.*?[\r\n]|\/\*(?:.|[\r\n])*?\*\//g, '')
       .replace(/\s+/g, '').split(',');
