@@ -603,6 +603,8 @@ Object.extend(Function.prototype, (function() {
       .replace(/\s+/g, '').split(',');
     return names.length == 1 && !names[0] ? [] : names;
   }
+
+  //什么意思，看官方API也没看懂到底是干嘛用的
   function bind(context) {
     if (arguments.length < 2 && Object.isUndefined(arguments[0]))
       return this;
@@ -1765,7 +1767,11 @@ var ObjectRange = Class.create(Enumerable, (function() {
   };
 })());
 var Abstract = { };
+
+//在ajax中使用，在初始化XMLHttpRequest对象的时候兼容不同浏览器
 var Try = {
+	//对每一个参数执行后返回得到的值
+	//使用try catch避免报错影响程序执行
   these: function() {
     var returnValue;
     for (var i = 0, length = arguments.length; i < length; i++) {
@@ -1778,6 +1784,11 @@ var Try = {
     return returnValue;
   }
 };
+
+/**
+ * prototype对于ajax的封装
+ */
+//初始化Ajax对象
 var Ajax = {
   getTransport: function() {
     return Try.these(
@@ -1788,18 +1799,24 @@ var Ajax = {
   },
   activeRequestCount: 0
 };
+//响应对象
 Ajax.Responders = {
   responders: [],
+  //iterator迭代器
   _each: function(iterator, context) {
     this.responders._each(iterator, context);
   },
+  //注册方法
+  //如果参数没有在响应对象集合里，就加入进去
   register: function(responder) {
     if (!this.include(responder))
       this.responders.push(responder);
   },
+  //把该参数从响应对象集合里剔除出去
   unregister: function(responder) {
     this.responders = this.responders.without(responder);
   },
+  //不知道是用来做什么用的
   dispatch: function(callback, request, transport, json) {
     this.each(function(responder) {
       if (Object.isFunction(responder[callback])) {
@@ -1811,10 +1828,12 @@ Ajax.Responders = {
   }
 };
 Object.extend(Ajax.Responders, Enumerable);
+//添加方法，操作当前活跃的响应对象的数量
 Ajax.Responders.register({
   onCreate:   function() { Ajax.activeRequestCount++ },
   onComplete: function() { Ajax.activeRequestCount-- }
 });
+//ajax的基本方法
 Ajax.Base = Class.create({
   initialize: function(options) {
     this.options = {
